@@ -3,7 +3,8 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-nativ
 import { ID, Models } from 'react-native-appwrite';
 import React, { useState, useEffect } from 'react';
 import { router } from 'expo-router';
-import { account } from '../appwrite/config';
+import { account } from '../../appwrite/config';
+import { Alert } from 'react-native';
 
 export default function Index() {
   const [loggedInUser, setLoggedInUser] = useState<Models.User<Models.Preferences> | null>(null);
@@ -12,43 +13,49 @@ export default function Index() {
   const [name, setName] = useState('');
 
   // Check if user is already logged in
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        // First check if there's an active session
-        try {
-          const session = await account.getSession('current');
-          if (session) {
-            const user = await account.get();
-            setLoggedInUser(user);
-          }
-        } catch (sessionError) {
-          // No active session, this is expected for new users
-          console.log('No active session found');
-        }
-      } catch (error) {
-        console.error('Session error:', error);
+useEffect(() => {
+  const checkSession = async () => {
+    try {
+      const session = await account.getSession('current');
+      if (session) {
+        const user = await account.get();
+        setLoggedInUser(user);
+        // Replace navigation stack to prevent going back
+        router.replace('/(tabs)/home');
       }
-    };
-    
-    checkSession();
-  }, []);
+    } catch (error) {
+      console.log('No active session found');
+    }
+  };
+  
+  checkSession();
+}, []);
 
   async function login(email: string, password: string) {
     try {
       await account.createEmailPasswordSession(email, password);
-      setLoggedInUser(await account.get());
-    } catch (error) {
+      const user = await account.get();
+      setLoggedInUser(user);
+      router.replace('/(tabs)/home'); // Fixed route path
+    } catch (error: unknown) {
       console.error('Login error:', error);
+      Alert.alert(
+        'Login Failed', 
+        error instanceof Error ? error.message : 'An unknown error occurred'
+      );
     }
   }
-
+  
   async function register(email: string, password: string, name: string) {
     try {
       await account.create(ID.unique(), email, password, name);
       await login(email, password);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Registration error:', error);
+      Alert.alert(
+        'Registration Failed', 
+        error instanceof Error ? error.message : 'An unknown error occurred'
+      );
     }
   }
 
