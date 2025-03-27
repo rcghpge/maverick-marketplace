@@ -4,26 +4,9 @@ import { account } from '../../appwrite/config';
 import { Alert } from 'react-native';
 
 export default function HomeScreen() {
-  const handleLogout = async () => {
-    try {
-      await account.deleteSession('current');
-      // Use the correct route format
-      router.replace('../(auth)');
-    } catch (error) {
-      Alert.alert('Logout Failed', 'Could not log out');
-    }
-  };
-
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome to Maverick Marketplace</Text>
-      
-      <TouchableOpacity
-        style={styles.logoutButton}
-        onPress={handleLogout}
-      >
-        <Text style={styles.buttonText}>Logout</Text>
-      </TouchableOpacity>
     </View>
   );
 }
