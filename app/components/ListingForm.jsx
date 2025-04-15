@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, TextInput, Text, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, TextInput, Text, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator, Modal, Pressable } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { ID } from 'react-native-appwrite';
@@ -25,6 +25,18 @@ export default function ListingForm({ navigation: externalNavigation }){
     const [location, setLocation] = useState('');
     const [images, setImages] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+
+    const categories = [
+        'Electronics',
+        'Textbooks',
+        'Furniture',
+        'Clothing',
+        'Sports Equipment',
+        'Home Appliances',
+        'School Supplies',
+        'Other'
+    ];
 
     const pickImage = async () => {
         try {
@@ -185,7 +197,12 @@ export default function ListingForm({ navigation: externalNavigation }){
         }
     };
 
-      return (
+    const selectCategory = (selectedCategory) => {
+        setCategory(selectedCategory);
+        setShowCategoryDropdown(false);
+    };
+
+    return (
         <ScrollView style={styles.container}>
           <Text style={styles.title}>Create New Listing</Text>
           
@@ -220,12 +237,38 @@ export default function ListingForm({ navigation: externalNavigation }){
           </View>
           
           <Text style={styles.label}>Category *</Text>
-          <TextInput
-            style={styles.input}
-            value={category}
-            onChangeText={setCategory}
-            placeholder="e.g. Electronics, Textbooks, Furniture"
-          />
+          <TouchableOpacity 
+            style={styles.input} 
+            onPress={() => setShowCategoryDropdown(true)}
+          >
+            <Text style={category ? {} : {color: '#999'}}>
+              {category || 'Select a category'}
+            </Text>
+          </TouchableOpacity>
+          
+          <Modal
+            visible={showCategoryDropdown}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setShowCategoryDropdown(false)}
+          >
+            <Pressable 
+              style={styles.modalOverlay} 
+              onPress={() => setShowCategoryDropdown(false)}
+            >
+              <View style={styles.dropdownContainer}>
+                {categories.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.dropdownItem}
+                    onPress={() => selectCategory(item)}
+                  >
+                    <Text style={styles.dropdownItemText}>{item}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </Pressable>
+          </Modal>
           
           <Text style={styles.label}>Condition</Text>
           <TextInput
@@ -303,6 +346,7 @@ const styles = StyleSheet.create({
       borderRadius: 5,
       marginBottom: 15,
       paddingHorizontal: 10,
+      justifyContent: 'center',
     },
     textArea: {
       height: 100,
@@ -384,6 +428,28 @@ const styles = StyleSheet.create({
     buttonText: {
       color: 'white',
       fontWeight: 'bold',
+      fontSize: 16,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    dropdownContainer: {
+      backgroundColor: 'white',
+      width: '80%',
+      borderRadius: 8,
+      padding: 10,
+      maxHeight: '60%',
+    },
+    dropdownItem: {
+      paddingVertical: 12,
+      paddingHorizontal: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: '#eee',
+    },
+    dropdownItemText: {
       fontSize: 16,
     },
   });
