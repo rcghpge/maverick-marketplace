@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, TextInput, Text, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator, Modal, Pressable } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
@@ -12,8 +12,6 @@ import {
     IMAGES_COLLECTION_ID,
     IMAGES_BUCKET_ID 
 } from '../../appwrite/config';
-import * as FileSystem from 'expo-file-system';
-import { Platform } from 'react-native';
 
 export default function ListingForm({ navigation: externalNavigation }){
     const router = useRouter();
@@ -26,6 +24,8 @@ export default function ListingForm({ navigation: externalNavigation }){
     const [images, setImages] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [currentUser, setCurrentUser] = useState(null);
 
     const categories = [
         'Electronics',
@@ -37,6 +37,43 @@ export default function ListingForm({ navigation: externalNavigation }){
         'School Supplies',
         'Other'
     ];
+
+    useEffect(() => {
+        const checkSession = async () => {
+            try {
+                const session = await account.getSession('current');
+                if (session) {
+                    const user = await account.get();
+                    setCurrentUser(user);
+                }
+            } catch (error) {
+                console.log('No active session found');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        
+        checkSession();
+    }, []);
+
+    if (isLoading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#2196F3" />
+            </View>
+        );
+    }
+
+    if (!currentUser) {
+        return (
+            <View style={styles.containerCenter}>
+                <Text style={styles.message}>Please log in to create a listing</Text>
+                <TouchableOpacity style={styles.button} onPress={() => router.push('/login')}>
+                    <Text style={styles.buttonText}>Log In</Text>
+                </TouchableOpacity>
+            </View>
+        );       
+    }
 
     const pickImage = async () => {
         try {
@@ -55,13 +92,6 @@ export default function ListingForm({ navigation: externalNavigation }){
             });
 
             if (!result.canceled){
-                console.log("Selected image info:", {
-                    uri: result.assets[0].uri,
-                    width: result.assets[0].width,
-                    height: result.assets[0].height,
-                    type: result.assets[0].type,
-                });
-
                 setImages([...images, result.assets[0]]);
             }
         } catch (error) {
@@ -106,12 +136,7 @@ export default function ListingForm({ navigation: externalNavigation }){
         setIsSubmitting(true);
 
         try{
-            console.log("Starting submission process");
-            const currentUser = await account.get();
-            console.log("Got current user:", currentUser.$id);
-
             const listingId = ID.unique();
-            console.log("Generated listing ID:", listingId);
 
             await databases.createDocument(
                 DATABASE_ID,
@@ -133,16 +158,10 @@ export default function ListingForm({ navigation: externalNavigation }){
             if (images.length > 0) {
                 await Promise.all(images.map(async (image, index) => {
                   try {
-                    // Get the file name from the URI
                     const uriParts = image.uri.split('/');
                     const fileName = uriParts[uriParts.length - 1];
-                    
-                    console.log(`Uploading image: ${fileName}`);
-                    
-                    // Create a unique ID for the file
                     const fileId = ID.unique();
                     
-                    // Prepare form data
                     const formData = new FormData();
                     formData.append('fileId', fileId);
                     formData.append('file', {
@@ -151,13 +170,11 @@ export default function ListingForm({ navigation: externalNavigation }){
                       type: 'image/jpeg',
                     });
                     
-                    // Use fetch API to upload the file directly
                     const endpoint = `${process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${IMAGES_BUCKET_ID}/files`;
                     const response = await fetch(endpoint, {
                       method: 'POST',
                       headers: {
                         'X-Appwrite-Project': process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID,
-                        // Add your API key or session token here for authentication
                       },
                       body: formData,
                     });
@@ -167,7 +184,6 @@ export default function ListingForm({ navigation: externalNavigation }){
                     }
                     
                     const fileData = await response.json();
-                    console.log(`File uploaded successfully with ID: ${fileData.$id}`);
                     
                     await databases.createDocument(
                       DATABASE_ID,
@@ -175,7 +191,7 @@ export default function ListingForm({ navigation: externalNavigation }){
                       ID.unique(),
                       {
                         listingId,
-                        fileId: fileData.$id || fileId, // Use the response ID if available, fallback to our generated ID
+                        fileId: fileData.$id || fileId,
                         order: index,
                       }
                     );
@@ -186,8 +202,6 @@ export default function ListingForm({ navigation: externalNavigation }){
               }
 
             Alert.alert('Success', 'Your listing has been created!');
-
-            // Use the router from Expo Router directly
             router.replace('/(tabs)');
         } catch (error) {
             console.error('Error creating listing:', error);
@@ -328,6 +342,34 @@ const styles = StyleSheet.create({
       padding: 16,
       backgroundColor: '#fff',
     },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    containerCenter: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    message: {
+        fontSize: 18,
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    button: {
+        backgroundColor: '#2196F3',
+        padding: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        width: 200,
+    },
+    buttonText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
     title: {
       fontSize: 24,
       fontWeight: 'bold',
@@ -415,21 +457,6 @@ const styles = StyleSheet.create({
       fontSize: 16,
       fontWeight: 'bold',
     },
-    button: {
-      backgroundColor: '#2196F3',
-      padding: 14,
-      borderRadius: 5,
-      alignItems: 'center',
-      marginVertical: 20,
-    },
-    buttonDisabled: {
-      backgroundColor: '#A9A9A9',
-    },
-    buttonText: {
-      color: 'white',
-      fontWeight: 'bold',
-      fontSize: 16,
-    },
     modalOverlay: {
       flex: 1,
       backgroundColor: 'rgba(0,0,0,0.5)',
@@ -452,4 +479,4 @@ const styles = StyleSheet.create({
     dropdownItemText: {
       fontSize: 16,
     },
-  });
+});
