@@ -26,6 +26,7 @@ export default function ListingForm({ navigation: externalNavigation }){
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [currentUser, setCurrentUser] = useState(null);
+    const [showImageSourceDialog, setShowImageSourceDialog] = useState(false);
 
     const categories = [
         'Electronics',
@@ -75,29 +76,67 @@ export default function ListingForm({ navigation: externalNavigation }){
         );       
     }
 
-    const pickImage = async () => {
-        try {
-            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            if (status !== 'granted'){
-                Alert.alert('Permission Denied', 'We need camera roll permissions to upload images');
-                return;
-            }
+    const requestPermissions = async () => {
+        const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+        const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        
+        if (cameraStatus !== 'granted' || libraryStatus !== 'granted') {
+            Alert.alert(
+                'Permissions Required',
+                'We need camera and photo library permissions to upload images',
+                [{ text: 'OK' }]
+            );
+            return false;
+        }
+        return true;
+    };
 
+    const pickImageFromGallery = async () => {
+        setShowImageSourceDialog(false);
+        const hasPermission = await requestPermissions();
+        if (!hasPermission) return;
+
+        try {
             const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ['images'],
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 allowsEditing: true,
+                aspect: [4, 3],
                 quality: 0.8,
-                base64: false,
-                exif: false,    
             });
 
-            if (!result.canceled){
+            if (!result.canceled) {
                 setImages([...images, result.assets[0]]);
             }
         } catch (error) {
             console.error('Error picking image:', error);
-            Alert.alert('Error', 'Failed to pick image');
+            Alert.alert('Error', 'Failed to pick image from gallery');
         }
+    };
+
+    const takePhotoWithCamera = async () => {
+        setShowImageSourceDialog(false);
+        const hasPermission = await requestPermissions();
+        if (!hasPermission) return;
+
+        try {
+            const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [4, 3],
+                quality: 0.8,
+            });
+
+            if (!result.canceled) {
+                setImages([...images, result.assets[0]]);
+            }
+        } catch (error) {
+            console.error('Error taking photo:', error);
+            Alert.alert('Error', 'Failed to take photo');
+        }
+    };
+
+    const showImagePickerOptions = () => {
+        setShowImageSourceDialog(true);
     };
 
     const removeImage = (index) => {
@@ -217,7 +256,11 @@ export default function ListingForm({ navigation: externalNavigation }){
     };
 
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView 
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+  >
           <Text style={styles.title}>Create New Listing</Text>
           
           <Text style={styles.label}>Title *</Text>
@@ -301,7 +344,7 @@ export default function ListingForm({ navigation: externalNavigation }){
           />
           
           <Text style={styles.label}>Images</Text>
-          <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+          <TouchableOpacity style={styles.imagePicker} onPress={showImagePickerOptions}>
             <Text style={styles.imagePickerText}>+ Add Photos</Text>
           </TouchableOpacity>
           
@@ -321,6 +364,37 @@ export default function ListingForm({ navigation: externalNavigation }){
             </View>
           )}
           
+          <Modal
+            visible={showImageSourceDialog}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setShowImageSourceDialog(false)}
+          >
+            <View style={styles.centeredView}>
+              <View style={styles.modalView}>
+                <Text style={styles.modalTitle}>Choose Image Source</Text>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cameraButton]}
+                  onPress={takePhotoWithCamera}
+                >
+                  <Text style={styles.modalButtonText}>Take Photo</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.galleryButton]}
+                  onPress={pickImageFromGallery}
+                >
+                  <Text style={styles.modalButtonText}>Choose from Gallery</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setShowImageSourceDialog(false)}
+                >
+                  <Text style={styles.modalButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+          
           <TouchableOpacity 
             style={[styles.button, isSubmitting && styles.buttonDisabled]} 
             onPress={submitListing}
@@ -332,6 +406,7 @@ export default function ListingForm({ navigation: externalNavigation }){
               <Text style={styles.buttonText}>Post Listing</Text>
             )}
           </TouchableOpacity>
+          <View style={styles.bottomSpacer} />
         </ScrollView>
       );
 }
@@ -363,7 +438,11 @@ const styles = StyleSheet.create({
         padding: 12,
         borderRadius: 8,
         alignItems: 'center',
-        width: 200,
+        width: '100%',
+        marginTop: 10,
+    },
+    buttonDisabled: {
+        backgroundColor: '#9E9E9E',
     },
     buttonText: {
         color: 'white',
@@ -478,5 +557,58 @@ const styles = StyleSheet.create({
     },
     dropdownItemText: {
       fontSize: 16,
+    },
+    centeredView: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    modalView: {
+      width: '80%',
+      backgroundColor: 'white',
+      borderRadius: 10,
+      padding: 20,
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      elevation: 5,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginBottom: 15,
+    },
+    modalButton: {
+      width: '100%',
+      padding: 12,
+      borderRadius: 5,
+      alignItems: 'center',
+      marginVertical: 5,
+    },
+    cameraButton: {
+      backgroundColor: '#2196F3',
+    },
+    galleryButton: {
+      backgroundColor: '#4CAF50',
+    },
+    cancelButton: {
+      backgroundColor: '#F44336',
+      marginTop: 10,
+    },
+    modalButtonText: {
+      color: 'white',
+      fontWeight: 'bold',
+    },
+    scrollContent: {
+      paddingBottom: 100, // Extra space to ensure button is above tab bar
+    },
+    bottomSpacer: {
+      height: 80, // Additional space to ensure scrollability
     },
 });
