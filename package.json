@@ -20,6 +20,7 @@
     "preset": "jest-expo"
   },
   "dependencies": {
+    "@expo-google-fonts/poppins": "^0.3.0",
     "@expo/react-native-action-sheet": "^4.1.1",
     "@expo/vector-icons": "^14.0.2",
     "@react-native-picker/picker": "2.9.0",
