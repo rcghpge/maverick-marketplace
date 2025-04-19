@@ -14,6 +14,20 @@ import {
 import { useRouter } from 'expo-router';
 import { ID } from 'react-native-appwrite';
 import { account, databases, DATABASE_ID, USERS_COLLECTION_ID } from '../appwrite/config';
+import { Ionicons } from '@expo/vector-icons';
+
+// Define theme colors to match tab layout
+const COLORS = {
+  darkBlue: '#0A1929',
+  mediumBlue: '#0F2942',
+  orange: '#FF6F00',
+  brightOrange: '#FF9800',
+  white: '#FFFFFF',
+  inactive: '#546E7A',
+  lightBlue: 'rgba(15, 41, 66, 0.8)',
+  inputBg: 'rgba(255, 255, 255, 0.1)',
+  error: '#FF5252',
+};
 
 export default function LoginScreen() {
   const [mode, setMode] = useState('login');
@@ -22,6 +36,7 @@ export default function LoginScreen() {
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{
     name?: string;
     email?: string;
@@ -118,7 +133,7 @@ export default function LoginScreen() {
   if (isCheckingSession) {
     return (
       <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color="#2196F3" />
+        <ActivityIndicator size="large" color={COLORS.brightOrange} />
       </View>
     );
   }
@@ -139,54 +154,70 @@ export default function LoginScreen() {
           {mode === 'register' && (
             <>
               <Text style={styles.label}>Name</Text>
-              <TextInput
-                style={[styles.input, fieldErrors.name && styles.error]}
-                value={name}
-                onChangeText={(text) => {
-                  setName(text);
-                  setFieldErrors((prev) => ({ 
-                    ...prev, 
-                    name: text.trim() === "" ? "Name is required." : undefined, }));
-                }}
-                placeholder="Your full name"
-                placeholderTextColor={"rgba(0, 0, 0, 0.5)"}
-                autoCapitalize="words"
-              />
+              <View style={[styles.inputContainer, fieldErrors.name && styles.inputError]}>
+                <Ionicons name="person-outline" size={20} color={COLORS.inactive} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  value={name}
+                  onChangeText={(text) => {
+                    setName(text);
+                    setFieldErrors((prev) => ({ 
+                      ...prev, 
+                      name: text.trim() === "" ? "Name is required." : undefined, }));
+                  }}
+                  placeholder="Your full name"
+                  placeholderTextColor={COLORS.inactive}
+                  autoCapitalize="words"
+                />
+              </View>
+              {fieldErrors.name && <Text style={styles.errorText}>{fieldErrors.name}</Text>}
             </>
           )}
-          {fieldErrors.name && <Text style={styles.errorText}>{fieldErrors.name}</Text>}
           
-          <Text style={[styles.label, fieldErrors.email && styles.error]}>Email</Text>
-          <TextInput
-            style={[styles.input, fieldErrors.email && styles.error]}
-            value={email}
-            onChangeText={(text) => {
-              setEmail(text);
-              setFieldErrors((prev) => ({ 
-                ...prev, 
-                email: text.trim() === "" ? "Email is required." : undefined, }));
-            }}
-            placeholder="Your email address"
-            placeholderTextColor={"rgba(0, 0, 0, 0.5)"}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
+          <Text style={styles.label}>Email</Text>
+          <View style={[styles.inputContainer, fieldErrors.email && styles.inputError]}>
+            <Ionicons name="mail-outline" size={20} color={COLORS.inactive} style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text);
+                setFieldErrors((prev) => ({ 
+                  ...prev, 
+                  email: text.trim() === "" ? "Email is required." : undefined, }));
+              }}
+              placeholder="Your email address"
+              placeholderTextColor={COLORS.inactive}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
           {fieldErrors.email && <Text style={styles.errorText}>{fieldErrors.email}</Text>}
           
-          <Text style={[styles.label, fieldErrors.password && styles.error]}>Password</Text>
-          <TextInput
-            style={[styles.input, fieldErrors.password && styles.error]}
-            value={password}
-            onChangeText={(text) => {
-              setPassword(text);
-              setFieldErrors((prev) => ({ 
-                ...prev, 
-                password: text.trim() === "" ? "Password is required." : undefined, }));
-            }}
-            placeholder="Your password"
-            placeholderTextColor={"rgba(0, 0, 0, 0.5)"}
-            secureTextEntry
-          />
+          <Text style={styles.label}>Password</Text>
+          <View style={[styles.inputContainer, fieldErrors.password && styles.inputError]}>
+            <Ionicons name="lock-closed-outline" size={20} color={COLORS.inactive} style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                setFieldErrors((prev) => ({ 
+                  ...prev, 
+                  password: text.trim() === "" ? "Password is required." : undefined, }));
+              }}
+              placeholder="Your password"
+              placeholderTextColor={COLORS.inactive}
+              secureTextEntry={!passwordVisible}
+            />
+            <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)} style={styles.visibilityIcon}>
+              <Ionicons 
+                name={passwordVisible ? "eye-outline" : "eye-off-outline"} 
+                size={20} 
+                color={COLORS.inactive} 
+              />
+            </TouchableOpacity>
+          </View>
           {fieldErrors.password && <Text style={styles.errorText}>{fieldErrors.password}</Text>}
           
           <TouchableOpacity
@@ -195,7 +226,7 @@ export default function LoginScreen() {
             disabled={isLoading}
           >
             {isLoading ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={COLORS.white} />
             ) : (
               <Text style={styles.buttonText}>
                 {mode === 'login' ? 'Log In' : 'Register'}
@@ -222,7 +253,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.darkBlue,
   },
   centered: {
     justifyContent: 'center',
@@ -230,7 +261,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    padding: 20,
+    padding: 25,
     justifyContent: 'center',
   },
   header: {
@@ -241,11 +272,11 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 8,
-    color: '#2196F3',
+    color: COLORS.brightOrange,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: COLORS.white,
     textAlign: 'center',
   },
   form: {
@@ -253,48 +284,73 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    marginBottom: 5,
+    marginBottom: 8,
     fontWeight: '500',
+    color: COLORS.white,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 50,
+    backgroundColor: COLORS.inputBg,
+    borderRadius: 10,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  inputIcon: {
+    paddingHorizontal: 12,
   },
   input: {
-    height: 45,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 5,
-    marginBottom: 15,
-    paddingHorizontal: 10,
+    flex: 1,
+    height: '100%',
+    color: COLORS.white,
+    paddingRight: 10,
+  },
+  visibilityIcon: {
+    paddingHorizontal: 12,
   },
   button: {
-    backgroundColor: '#2196F3',
-    height: 45,
-    borderRadius: 5,
+    backgroundColor: COLORS.orange,
+    height: 50,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 10,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
   },
   buttonDisabled: {
-    backgroundColor: '#A9A9A9',
+    backgroundColor: COLORS.inactive,
   },
   buttonText: {
-    color: 'white',
+    color: COLORS.white,
     fontWeight: 'bold',
     fontSize: 16,
   },
   switchMode: {
-    marginTop: 20,
+    marginTop: 25,
     alignItems: 'center',
   },
   switchModeText: {
-    color: '#2196F3',
+    color: COLORS.brightOrange,
     fontSize: 16,
   },
-  error: {
-    borderColor: 'red'
+  inputError: {
+    borderColor: COLORS.error,
+    borderWidth: 1,
   },
   errorText: {
-    color: 'red',
+    color: COLORS.error,
     fontSize: 12,
-    marginTop: -10,
-    marginBottom: 10,
+    marginTop: -8,
+    marginBottom: 12,
+    paddingLeft: 5,
   }
 });

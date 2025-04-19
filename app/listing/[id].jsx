@@ -26,6 +26,25 @@ import {
 } from '../../appwrite/config';
 import { Ionicons } from '@expo/vector-icons';
 
+// Define consistent theme colors
+const COLORS = {
+  darkBlue: '#0A1929',
+  mediumBlue: '#0F2942',
+  lightBlue: '#1565C0',
+  orange: '#FF6F00', 
+  brightOrange: '#FF9800',
+  white: '#FFFFFF',
+  lightGray: '#F5F7FA',
+  mediumGray: '#B0BEC5',
+  darkGray: '#546E7A',
+  error: '#FF5252',
+  success: '#4CAF50',
+  background: '#0A1929',
+  cardBackground: '#0F2942',
+  textPrimary: '#FFFFFF',
+  textSecondary: '#B0BEC5',
+};
+
 export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
@@ -251,7 +270,7 @@ export default function ListingDetailScreen() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2196F3" />
+        <ActivityIndicator size="large" color={COLORS.orange} />
       </View>
     );
   }
@@ -410,24 +429,26 @@ export default function ListingDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.darkBlue,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: COLORS.darkBlue,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    backgroundColor: COLORS.darkBlue,
   },
   errorText: {
     fontSize: 18,
     marginBottom: 20,
     textAlign: 'center',
-    color: '#f44336',
+    color: COLORS.error,
   },
   galleryContainer: {
     height: 300,
@@ -441,26 +462,28 @@ const styles = StyleSheet.create({
   },
   placeholderImage: {
     height: 300,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: COLORS.mediumBlue,
     justifyContent: 'center',
     alignItems: 'center',
   },
   placeholderText: {
     fontSize: 16,
-    color: '#888',
+    color: COLORS.textSecondary,
   },
   detailsContainer: {
     padding: 16,
+    backgroundColor: COLORS.darkBlue,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 8,
+    color: COLORS.white,
   },
   price: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#2196F3',
+    color: COLORS.orange,
     marginBottom: 16,
   },
   infoRow: {
@@ -471,35 +494,41 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     width: 100,
+    color: COLORS.textSecondary,
   },
   infoValue: {
     fontSize: 16,
     flex: 1,
+    color: COLORS.white,
   },
   descriptionHeader: {
     fontSize: 18,
     fontWeight: '500',
     marginTop: 16,
     marginBottom: 8,
+    color: COLORS.white,
   },
   description: {
     fontSize: 16,
     lineHeight: 24,
     marginBottom: 24,
+    color: COLORS.textPrimary,
   },
   sellerContainer: {
     marginBottom: 24,
     padding: 16,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: COLORS.mediumBlue,
     borderRadius: 8,
   },
   sellerHeader: {
     fontSize: 18,
     fontWeight: '500',
     marginBottom: 8,
+    color: COLORS.white,
   },
   sellerName: {
     fontSize: 16,
+    color: COLORS.textPrimary,
   },
   actionButtons: {
     flexDirection: 'row',
@@ -509,11 +538,11 @@ const styles = StyleSheet.create({
   messageButton: {
     flex: 1,
     marginRight: 8,
-    backgroundColor: '#4CAF50',
+    backgroundColor: COLORS.orange,
   },
   button: {
     flex: 1,
-    backgroundColor: '#2196F3',
+    backgroundColor: COLORS.lightBlue,
     flexDirection: 'row',
     justifyContent: 'center',
     padding: 14,
@@ -525,17 +554,16 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   buttonText: {
-    color: 'white',
+    color: COLORS.white,
     fontWeight: 'bold',
     fontSize: 16,
   },
   deleteButton: {
-    backgroundColor: '#f44336',
+    backgroundColor: COLORS.error,
   },
   ownerButtons: {
     marginTop: 16,
   },
-
   modalContainer: {
     flex: 1,
     justifyContent: 'center',

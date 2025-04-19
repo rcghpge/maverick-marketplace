@@ -6,10 +6,11 @@ import {
   FlatList, 
   TextInput, 
   TouchableOpacity, 
-  KeyboardAvoidingView, 
-  Platform,
   ActivityIndicator,
-  Alert
+  Alert,
+  Keyboard,
+  Platform,
+  KeyboardAvoidingView
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ID, Query } from 'react-native-appwrite';
@@ -23,6 +24,24 @@ import {
   MESSAGES_COLLECTION_ID, 
   USERS_COLLECTION_ID 
 } from '../../appwrite/config';
+
+// Define consistent theme colors
+const COLORS = {
+  darkBlue: '#0A1929',
+  mediumBlue: '#0F2942',
+  lightBlue: '#1565C0',
+  orange: '#FF6F00', 
+  brightOrange: '#FF9800',
+  white: '#FFFFFF',
+  lightGray: '#F5F7FA',
+  mediumGray: '#B0BEC5',
+  darkGray: '#546E7A',
+  error: '#FF5252',
+  background: '#0A1929',
+  cardBackground: '#0F2942',
+  textPrimary: '#FFFFFF',
+  textSecondary: '#B0BEC5',
+};
 
 export default function ChatDetailScreen() {
   const { id: chatId } = useLocalSearchParams();
@@ -275,17 +294,13 @@ export default function ChatDetailScreen() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2196F3" />
+        <ActivityIndicator size="large" color={COLORS.orange} />
       </View>
     );
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-    >
+    <View style={styles.container}>
       {/* Chat Header */}
       {chatInfo && (
         <View style={styles.chatHeader}>
@@ -305,67 +320,78 @@ export default function ChatDetailScreen() {
         renderItem={renderMessage}
         keyExtractor={item => item.$id}
         contentContainerStyle={styles.messagesContainer}
+        style={styles.messagesList}
         onContentSizeChange={() => {
           if (flatListRef.current && messages.length > 0) {
             flatListRef.current.scrollToEnd({ animated: true });
           }
         }}
+        keyboardDismissMode="interactive"
       />
       
-      {/* Message Input */}
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          value={newMessage}
-          onChangeText={setNewMessage}
-          placeholder="Type a message..."
-          multiline
-        />
-        <TouchableOpacity 
-          style={[styles.sendButton, !newMessage.trim() && styles.sendButtonDisabled]} 
-          onPress={sendMessage}
-          disabled={!newMessage.trim()}
-        >
-          <Ionicons 
-            name="send" 
-            size={20} 
-            color={!newMessage.trim() ? '#A9A9A9' : '#fff'} 
+      {/* Keyboard Avoiding Input */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 85 : 0}
+      >
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            value={newMessage}
+            onChangeText={setNewMessage}
+            placeholder="Type a message..."
+            placeholderTextColor={COLORS.mediumGray}
+            multiline
           />
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+          <TouchableOpacity 
+            style={[styles.sendButton, !newMessage.trim() && styles.sendButtonDisabled]} 
+            onPress={sendMessage}
+            disabled={!newMessage.trim()}
+          >
+            <Ionicons 
+              name="send" 
+              size={20} 
+              color={!newMessage.trim() ? COLORS.mediumGray : COLORS.white} 
+            />
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: COLORS.darkBlue,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: COLORS.darkBlue,
   },
   chatHeader: {
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.mediumBlue,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: 'rgba(255,255,255,0.1)',
   },
   listingTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 4,
+    color: COLORS.white,
   },
   chatWith: {
     fontSize: 14,
-    color: '#666',
+    color: COLORS.textSecondary,
   },
   messagesContainer: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     flexGrow: 1,
+    backgroundColor: COLORS.darkBlue,
   },
   messageContainer: {
     marginVertical: 4,
@@ -383,28 +409,28 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   currentUserBubble: {
-    backgroundColor: '#2196F3',
+    backgroundColor: COLORS.orange,
     borderBottomRightRadius: 4,
   },
   otherUserBubble: {
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.mediumBlue,
     borderBottomLeftRadius: 4,
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   messageText: {
     fontSize: 16,
     marginRight: 40,
   },
   currentUserText: {
-    color: '#fff',
+    color: COLORS.white,
   },
   otherUserText: {
-    color: '#333',
+    color: COLORS.textPrimary,
   },
   messageTime: {
     fontSize: 10,
-    color: '#888',
+    color: 'rgba(255,255,255,0.7)',
     alignSelf: 'flex-end',
     marginTop: 4,
     position: 'absolute',
@@ -416,39 +442,51 @@ const styles = StyleSheet.create({
     margin: 8,
   },
   dateSeparatorText: {
-    backgroundColor: '#e0e0e0',
-    color: '#666',
+    backgroundColor: COLORS.mediumBlue,
+    color: COLORS.brightOrange,
     fontSize: 12,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 10,
   },
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.darkBlue,
+  },
+  messagesList: {
+    flex: 1,
+    marginBottom: Platform.OS === 'ios' ? 0 : 60, // Android needs some bottom padding
+  },
   inputContainer: {
     flexDirection: 'row',
-    padding: 8,
-    backgroundColor: '#fff',
+    padding: 12,
+    paddingBottom: Platform.OS === 'ios' ? 25 : 12,
+    backgroundColor: COLORS.mediumBlue,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
+    borderTopColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
   },
   input: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: COLORS.darkBlue,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
     maxHeight: 100,
+    color: COLORS.white,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   sendButton: {
     marginLeft: 8,
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#2196F3',
+    backgroundColor: COLORS.orange,
     justifyContent: 'center',
     alignItems: 'center',
   },
   sendButtonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: COLORS.darkGray,
   },
 });

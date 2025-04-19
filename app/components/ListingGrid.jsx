@@ -56,32 +56,44 @@ export default function ListingGrid({ listing, isLoading, refreshing, onRefresh 
         numColumns={2}
         contentContainerStyle={styles.listContainer}
         refreshControl={
-          <RefreshControl refreshing={refreshing || false} onRefresh={onRefresh} />
+          <RefreshControl 
+            refreshing={refreshing || false} 
+            onRefresh={onRefresh}
+            colors={['#FF8A00']} 
+            tintColor="#FF8A00"
+          />
         }
+        style={styles.flatList}
       />
     );
 }
 
 const styles = StyleSheet.create({
+    flatList: {
+      backgroundColor: '#0A1929',
+    },
     listContainer: {
       padding: 8,
     },
     listingCard: {
       flex: 1,
       margin: 8,
-      backgroundColor: 'white',
-      borderRadius: 8,
+      backgroundColor: '#FFFFFF',
+      borderRadius: 10,
       overflow: 'hidden',
-      elevation: 2,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
+      elevation: 3,
+      shadowColor: '#0F2C5C',
+      shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.2,
-      shadowRadius: 1.5,
+      shadowRadius: 2,
       maxWidth: '47%',
+      borderWidth: 1,
+      borderColor: '#E0E8F7',
     },
     imageContainer: {
       height: 150,
       width: '100%',
+      backgroundColor: '#E0E8F7',
     },
     image: {
       width: '100%',
@@ -90,40 +102,46 @@ const styles = StyleSheet.create({
     placeholderImage: {
       width: '100%',
       height: '100%',
-      backgroundColor: '#f0f0f0',
+      backgroundColor: '#E0E8F7',
       justifyContent: 'center',
       alignItems: 'center',
     },
     placeholderText: {
-      color: '#888',
+      color: '#0F2C5C',
+      fontWeight: '500',
     },
     infoContainer: {
-      padding: 10,
+      padding: 12,
+      backgroundColor: '#FFFFFF',
     },
     title: {
       fontSize: 14,
-      fontWeight: '500',
-      marginBottom: 4,
+      fontWeight: '600',
+      marginBottom: 6,
+      color: '#0F2C5C',
     },
     price: {
       fontSize: 16,
       fontWeight: 'bold',
-      color: '#2196F3',
-      marginBottom: 4,
+      color: '#FF8A00',
+      marginBottom: 6,
     },
     category: {
       fontSize: 12,
-      color: '#666',
+      color: '#5A7299',
+      fontWeight: '500',
     },
     emptyContainer: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
       padding: 20,
+      backgroundColor: '#F5F8FF',
     },
     emptyText: {
       fontSize: 16,
-      color: '#666',
+      color: '#0F2C5C',
       textAlign: 'center',
+      fontWeight: '500',
     },
-  });
+});
