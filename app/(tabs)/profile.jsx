@@ -1,9 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, ActivityIndicator, StatusBar } from 'react-native';
 import { Query } from 'react-native-appwrite';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { account, databases, DATABASE_ID, USERS_COLLECTION_ID, LISTINGS_COLLECTION_ID } from '../../appwrite/config';
 import UserProfileForm from '../components/UserProfileForm';
+
+// Define consistent theme colors - matching home page
+const COLORS = {
+  darkBlue: '#0A1929',
+  mediumBlue: '#0F2942',
+  lightBlue: '#1565C0',
+  orange: '#FF6F00', 
+  brightOrange: '#FF9800',
+  white: '#FFFFFF',
+  lightGray: '#F5F7FA',
+  mediumGray: '#B0BEC5',
+  darkGray: '#546E7A',
+  error: '#FF5252',
+  success: '#4CAF50',
+  successLight: 'rgba(76, 175, 80, 0.2)',
+  errorLight: 'rgba(255, 82, 82, 0.2)',
+  background: '#0A1929',
+  cardBackground: '#0F2942',
+  textPrimary: '#FFFFFF',
+  textSecondary: '#B0BEC5',
+};
 
 export default function ProfileScreen() {
   const [user, setUser] = useState(null);
@@ -12,6 +35,7 @@ export default function ProfileScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   
   useEffect(() => {
     fetchUserData();
@@ -74,61 +98,92 @@ export default function ProfileScreen() {
   
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2196F3" />
+      <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
+        <StatusBar barStyle="light-content" backgroundColor={COLORS.darkBlue} />
+        <ActivityIndicator size="large" color={COLORS.brightOrange} />
+        <Text style={styles.loadingText}>Loading profile...</Text>
       </View>
     );
   }
   
   if (!user) {
     return (
-      <View style={styles.containerCenter}>
+      <View style={[styles.containerCenter, { paddingTop: insets.top }]}>
+        <StatusBar barStyle="light-content" backgroundColor={COLORS.darkBlue} />
+        <Text style={styles.title}>My Profile</Text>
         <Text style={styles.message}>Please log in to view your profile</Text>
-        <TouchableOpacity style={styles.button} onPress={() => router.push('/login')}>
-            <Text style={styles.buttonText}>Log In</Text>
+        <TouchableOpacity 
+          style={styles.loginButton} 
+          onPress={() => router.push('/login')}
+        >
+          <Text style={styles.loginButtonText}>Log In</Text>
         </TouchableOpacity> 
       </View>
     );
   }
   
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.darkBlue} />
+      
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Profile</Text>
-        <TouchableOpacity onPress={handleLogout}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
+        <View style={styles.headerContent}>
+          <View style={styles.headerTitleContainer}>
+            <Ionicons name="person" size={24} color={COLORS.brightOrange} style={styles.headerIcon} />
+            <Text style={styles.headerTitle}>My Profile</Text>
+          </View>
+          
+          <TouchableOpacity 
+            style={styles.logoutButton}
+            onPress={handleLogout}
+          >
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
+        </View>
       </View>
       
-      <ScrollView style={styles.scrollView}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: 80 }}>
         {isEditing ? (
           <UserProfileForm existingProfile={profile} onProfileSaved={profileSaved} />
         ) : (
           <View style={styles.profileSection}>
-            <View style={styles.profileInfo}>
-              <Text style={styles.name}>{profile?.displayName || user.name}</Text>
-              <Text style={styles.email}>{user.email}</Text>
-              
-              {profile && profile.bio && (
-                <View style={styles.bioSection}>
-                  <Text style={styles.bioLabel}>About Me</Text>
-                  <Text style={styles.bio}>{profile.bio}</Text>
-                </View>
-              )}
-              
-              {profile && (profile.contactEmail || profile.phoneNumber) && (
-                <View style={styles.contactSection}>
-                  <Text style={styles.contactLabel}>Contact Information</Text>
-                  {profile.contactEmail && (
-                    <Text style={styles.contactInfo}>Email: {profile.contactEmail}</Text>
-                  )}
-                  {profile.phoneNumber && (
-                    <Text style={styles.contactInfo}>Phone: {profile.phoneNumber}</Text>
-                  )}
-                </View>
-              )}
+            <View style={styles.profileHeader}>
+              <View style={styles.profileAvatar}>
+                <Text style={styles.avatarText}>
+                  {(profile?.displayName || user.name).charAt(0).toUpperCase()}
+                </Text>
+              </View>
+              <View style={styles.profileInfo}>
+                <Text style={styles.name}>{profile?.displayName || user.name}</Text>
+                <Text style={styles.email}>{user.email}</Text>
+              </View>
             </View>
+            
+            {profile && profile.bio && (
+              <View style={styles.bioSection}>
+                <Text style={styles.sectionLabel}>About Me</Text>
+                <Text style={styles.bio}>{profile.bio}</Text>
+              </View>
+            )}
+            
+            {profile && (profile.contactEmail || profile.phoneNumber) && (
+              <View style={styles.contactSection}>
+                <Text style={styles.sectionLabel}>Contact Information</Text>
+                {profile.contactEmail && (
+                  <View style={styles.contactRow}>
+                    <Ionicons name="mail-outline" size={18} color={COLORS.mediumGray} />
+                    <Text style={styles.contactInfo}>{profile.contactEmail}</Text>
+                  </View>
+                )}
+                {profile.phoneNumber && (
+                  <View style={styles.contactRow}>
+                    <Ionicons name="call-outline" size={18} color={COLORS.mediumGray} />
+                    <Text style={styles.contactInfo}>{profile.phoneNumber}</Text>
+                  </View>
+                )}
+              </View>
+            )}
             
             <TouchableOpacity 
               style={styles.editButton} 
@@ -147,6 +202,7 @@ export default function ProfileScreen() {
           
           {myListings.length === 0 ? (
             <View style={styles.emptyListings}>
+              <Ionicons name="pricetags-outline" size={50} color={COLORS.mediumGray} />
               <Text style={styles.emptyText}>You don't have any listings yet</Text>
               <TouchableOpacity 
                 style={styles.createButton}
@@ -189,7 +245,7 @@ export default function ProfileScreen() {
         style={styles.floatingButton}
         onPress={() => router.push('/create-listing')}
       >
-        <Text style={styles.floatingButtonText}>+</Text>
+        <Ionicons name="add" size={24} color={COLORS.white} />
       </TouchableOpacity>
     </View>
   );
@@ -198,101 +254,184 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: COLORS.background,
   },
   containerCenter: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    backgroundColor: COLORS.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: COLORS.background,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: COLORS.textSecondary,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: COLORS.white,
+  },
+  message: {
+    fontSize: 16,
+    color: COLORS.textSecondary,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  loginButton: {
+    backgroundColor: COLORS.brightOrange,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    width: 200,
+  },
+  loginButtonText: {
+    color: COLORS.white,
+    fontWeight: '600',
+    fontSize: 14,
   },
   header: {
-    backgroundColor: '#2196F3',
+    backgroundColor: COLORS.mediumBlue,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    paddingTop: 40,
+  },
+  headerTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIcon: {
+    marginRight: 8,
   },
   headerTitle: {
-    color: 'white',
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
+    color: COLORS.white,
+  },
+  logoutButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
   logoutText: {
-    color: 'white',
-    fontSize: 16,
+    color: COLORS.white,
+    fontSize: 14,
   },
   scrollView: {
     flex: 1,
   },
   profileSection: {
-    backgroundColor: 'white',
+    backgroundColor: COLORS.cardBackground,
     padding: 16,
+    margin: 16,
+    borderRadius: 8,
+  },
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 16,
   },
+  profileAvatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: COLORS.brightOrange,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  avatarText: {
+    color: COLORS.white,
+    fontWeight: 'bold',
+    fontSize: 26,
+  },
   profileInfo: {
-    marginBottom: 16,
+    flex: 1,
   },
   name: {
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 4,
+    color: COLORS.white,
   },
   email: {
     fontSize: 16,
-    color: '#666',
-    marginBottom: 16,
+    color: COLORS.textSecondary,
   },
   bioSection: {
     marginBottom: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
   },
-  bioLabel: {
+  sectionLabel: {
     fontSize: 16,
     fontWeight: '500',
-    marginBottom: 4,
+    marginBottom: 8,
+    color: COLORS.brightOrange,
   },
   bio: {
     fontSize: 16,
     lineHeight: 22,
+    color: COLORS.textPrimary,
   },
   contactSection: {
     marginBottom: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
   },
-  contactLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 4,
+  contactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   contactInfo: {
     fontSize: 16,
-    marginBottom: 2,
+    marginLeft: 8,
+    color: COLORS.textPrimary,
   },
   editButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: COLORS.brightOrange,
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
+    marginTop: 8,
   },
   editButtonText: {
-    color: 'white',
+    color: COLORS.white,
     fontWeight: 'bold',
     fontSize: 16,
   },
   listingsSection: {
-    backgroundColor: 'white',
+    backgroundColor: COLORS.cardBackground,
     padding: 16,
-    marginBottom: 16,
+    margin: 16,
+    marginTop: 0,
+    borderRadius: 8,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 16,
+    color: COLORS.white,
   },
   emptyListings: {
     alignItems: 'center',
@@ -300,18 +439,20 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#666',
+    color: COLORS.textSecondary,
+    marginTop: 8,
     marginBottom: 16,
     textAlign: 'center',
   },
   createButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: COLORS.brightOrange,
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
+    width: '80%',
   },
   createButtonText: {
-    color: 'white',
+    color: COLORS.white,
     fontWeight: 'bold',
     fontSize: 16,
   },
@@ -324,7 +465,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: 'rgba(255,255,255,0.1)',
   },
   listingInfo: {
     flex: 1,
@@ -333,10 +474,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     marginBottom: 4,
+    color: COLORS.white,
   },
   listingPrice: {
     fontSize: 14,
-    color: '#2196F3',
+    color: COLORS.brightOrange,
+    fontWeight: '600',
   },
   listingStatus: {
     marginLeft: 8,
@@ -349,49 +492,27 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   activeStatus: {
-    backgroundColor: '#E8F5E9',
-    color: '#4CAF50',
+    backgroundColor: COLORS.successLight,
+    color: COLORS.success,
   },
   inactiveStatus: {
-    backgroundColor: '#FFEBEE',
-    color: '#F44336',
-  },
-  message: {
-    fontSize: 18,
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  button: {
-    backgroundColor: '#2196F3',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    width: 200,
-  },
-  buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
+    backgroundColor: COLORS.errorLight,
+    color: COLORS.error,
   },
   floatingButton: {
     position: 'absolute',
     right: 20,
-    bottom: 20,
+    bottom: 120,
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#2196F3',
+    backgroundColor: COLORS.orange,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
+    elevation: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 3,
-  },
-  floatingButtonText: {
-    fontSize: 24,
-    color: 'white',
-    fontWeight: 'bold',
+    shadowRadius: 5,
   },
 });

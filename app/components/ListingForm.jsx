@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, TextInput, Text, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator, Modal, Pressable, Platform } from 'react-native';
+import { StyleSheet, View, TextInput, Text, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator, Modal, Pressable, Platform, StatusBar } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { ID } from 'react-native-appwrite';
+import { useSafeAreaInsets } from 'react-native-safe-area-context'; 
 import {
     account,
     databases, 
@@ -13,7 +14,26 @@ import {
     IMAGES_BUCKET_ID 
 } from '../../appwrite/config';
 
-export default function ListingForm({ navigation: externalNavigation }){
+const COLORS = {
+  darkBlue: '#0A1929',
+  mediumBlue: '#0F2942',
+  lightBlue: '#1565C0',
+  orange: '#FF6F00', 
+  brightOrange: '#FF9800',
+  white: '#FFFFFF',
+  lightGray: '#F5F7FA',
+  mediumGray: '#B0BEC5',
+  darkGray: '#546E7A',
+  error: '#FF5252',
+  success: '#4CAF50',
+  background: '#0A1929',
+  cardBackground: '#0F2942',
+  textPrimary: '#FFFFFF',
+  textSecondary: '#B0BEC5',
+};
+
+export default function ListingForm() {
+    const insets = useSafeAreaInsets();
     const router = useRouter();
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -66,26 +86,6 @@ export default function ListingForm({ navigation: externalNavigation }){
         checkSession();
     }, []);
 
-    if (isLoading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#2196F3" />
-            </View>
-        );
-    }
-
-    if (!currentUser) {
-        return (
-            <View style={styles.containerCenter}>
-                <Text style={styles.message}>Please log in to create a listing</Text>
-                <TouchableOpacity style={styles.button} onPress={() => router.push('/login')}>
-                    <Text style={styles.buttonText}>Log In</Text>
-                </TouchableOpacity>
-            </View>
-        );       
-    }
-
-    // Simple function to handle image selection
     const handleSelectImage = () => {
       Alert.alert(
         'Add Photo',
@@ -108,17 +108,14 @@ export default function ListingForm({ navigation: externalNavigation }){
       );
     };
 
-    // Select image from gallery without using a modal
     const selectImageFromGallery = async () => {
       try {
-        // Request permissions first
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
           Alert.alert('Permission Denied', 'Permission to access gallery was denied');
           return;
         }
 
-        // Simplified options for better compatibility
         const pickerResult = await ImagePicker.launchImageLibraryAsync({
           mediaTypes: ImagePicker.MediaTypeOptions.Images,
           allowsEditing: false,
@@ -135,17 +132,14 @@ export default function ListingForm({ navigation: externalNavigation }){
       }
     };
 
-    // Take photo with camera without using a modal
     const selectImageFromCamera = async () => {
       try {
-        // Request permissions first
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
         if (status !== 'granted') {
           Alert.alert('Permission Denied', 'Permission to access camera was denied');
           return;
         }
 
-        // Simplified options for better compatibility
         const pickerResult = await ImagePicker.launchCameraAsync({
           mediaTypes: ImagePicker.MediaTypeOptions.Images,
           allowsEditing: false,
@@ -162,7 +156,6 @@ export default function ListingForm({ navigation: externalNavigation }){
       }
     };
 
-    // Remove image at specified index
     const removeImage = (index) => {
       const newImages = [...images];
       newImages.splice(index, 1);
@@ -178,7 +171,6 @@ export default function ListingForm({ navigation: externalNavigation }){
       if (!category.trim()) errors.category = "Category is required.";
   
       setFieldErrors(errors);
-  
       return Object.keys(errors).length === 0;
     };
     
@@ -250,10 +242,28 @@ export default function ListingForm({ navigation: externalNavigation }){
                     console.error(`Upload failed for image ${index}:`, error);
                   }
                 }));
-              }
+            }
 
-            Alert.alert('Success', 'Your listing has been created!');
-            router.replace('/(tabs)');
+            Alert.alert('Success', 'Your listing has been created!', [
+              {
+                text: 'OK',
+                onPress: () => {
+                  // Reset form
+                  setTitle('');
+                  setDescription('');
+                  setPrice('');
+                  setCategory('');
+                  setCondition('');
+                  setLocation('');
+                  setImages([]);
+                  setFieldErrors({});
+                  
+                  // Navigate back to listings
+                  router.replace('/(tabs)');
+                }
+              }
+            ]);
+            
         } catch (error) {
             console.error('Error creating listing:', error);
             Alert.alert('Error', 'Failed to create listing. Please try again.');
@@ -273,12 +283,35 @@ export default function ListingForm({ navigation: externalNavigation }){
       setShowConditionDropdown(false);
     };
 
+    if (isLoading) {
+        return (
+            <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
+                <StatusBar barStyle="light-content" backgroundColor={COLORS.darkBlue} />
+                <ActivityIndicator size="large" color={COLORS.brightOrange} />
+                <Text style={styles.loadingText}>Loading...</Text>
+            </View>
+        );
+    }
+
+    if (!currentUser) {
+        return (
+            <View style={[styles.containerCenter, { paddingTop: insets.top }]}>
+                <StatusBar barStyle="light-content" backgroundColor={COLORS.darkBlue} />
+                <Text style={styles.message}>Please log in to create a listing</Text>
+                <TouchableOpacity style={styles.loginButton} onPress={() => router.push('/login')}>
+                    <Text style={styles.loginButtonText}>Log In</Text>
+                </TouchableOpacity>
+            </View>
+        );       
+    }
+
     return (
       <ScrollView 
         style={styles.container}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 10 }]}
         keyboardShouldPersistTaps="handled"
       >
+        <StatusBar barStyle="light-content" backgroundColor={COLORS.darkBlue} />
         <Text style={styles.title}>Create New Listing</Text>
         
         {/* Images Section */}
@@ -325,6 +358,8 @@ export default function ListingForm({ navigation: externalNavigation }){
               }));
             }}
             placeholder="What are you selling?"
+            placeholderTextColor={COLORS.mediumGray}
+            color={COLORS.textPrimary}
           />
           {fieldErrors.title && <Text style={styles.errorText}>{fieldErrors.title}</Text>}
         </View>
@@ -352,7 +387,9 @@ export default function ListingForm({ navigation: externalNavigation }){
                 setFieldErrors(prev => ({ ...prev, price: errorMessage }));
               }}
               placeholder="0.00"
+              placeholderTextColor={COLORS.mediumGray}
               keyboardType="decimal-pad"
+              color={COLORS.textPrimary}
             />
           </View>
           {fieldErrors.price && <Text style={styles.errorText}>{fieldErrors.price}</Text>}
@@ -397,6 +434,8 @@ export default function ListingForm({ navigation: externalNavigation }){
               value={location}
               onChangeText={setLocation}
               placeholder="Where on campus?"
+              placeholderTextColor={COLORS.mediumGray}
+              color={COLORS.textPrimary}
             />
           </View>
         </View>
@@ -415,8 +454,10 @@ export default function ListingForm({ navigation: externalNavigation }){
               }));
             }}
             placeholder="Describe your item in detail. Include any relevant information that buyers would want to know."
+            placeholderTextColor={COLORS.mediumGray}
             multiline
             numberOfLines={6}
+            color={COLORS.textPrimary}
           />
           {fieldErrors.description && <Text style={styles.errorText}>{fieldErrors.description}</Text>}
         </View>
@@ -515,312 +556,331 @@ export default function ListingForm({ navigation: externalNavigation }){
             </View>
           </Pressable>
         </Modal>
-        
       </ScrollView>
     );
-  }
-  
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#f5f5f7',
-    },
-    containerCenter: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 20,
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    message: {
-      fontSize: 18,
-      marginBottom: 20,
-      textAlign: 'center',
-    },
-    scrollContent: {
-      padding: 16,
-      paddingBottom: 100,
-    },
-    title: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      marginBottom: 20,
-      textAlign: 'center',
-      color: '#1a73e8',
-    },
-    sectionContainer: {
-      marginBottom: 20,
-    },
-    sectionTitle: {
-      fontSize: 16,
-      fontWeight: '600',
-      marginBottom: 6,
-      color: '#333',
-    },
-    sectionSubtitle: {
-      fontSize: 12,
-      color: '#888',
-      marginBottom: 10,
-      fontStyle: 'italic',
-    },
-    imagesRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-    },
-    imageWrapper: {
-      position: 'relative',
-      width: 100,
-      height: 100,
-      margin: 4,
-      borderRadius: 8,
-      overflow: 'hidden',
-    },
-    imagePreview: {
-      width: '100%',
-      height: '100%',
-    },
-    removeButton: {
-      position: 'absolute',
-      top: 5,
-      right: 5,
-      backgroundColor: 'rgba(255, 0, 0, 0.8)',
-      width: 22,
-      height: 22,
-      borderRadius: 11,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    removeButtonText: {
-      color: 'white',
-      fontSize: 14,
-      fontWeight: 'bold',
-    },
-    addImageButton: {
-      width: 100,
-      height: 100,
-      margin: 4,
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderStyle: 'dashed',
-      borderRadius: 8,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: '#f9f9f9',
-    },
-    addImageContent: {
-      alignItems: 'center',
-    },
-    plusIcon: {
-      fontSize: 24,
-      color: '#1a73e8',
-      marginBottom: 4,
-    },
-    addImageText: {
-      fontSize: 12,
-      color: '#1a73e8',
-    },
-    fieldContainer: {
-      marginBottom: 16,
-    },
-    label: {
-      fontSize: 16,
-      fontWeight: '500',
-      marginBottom: 8,
-      color: '#333',
-    },
-    required: {
-      color: '#e53935',
-    },
-    input: {
-      height: 50,
-      borderWidth: 1,
-      borderColor: '#ddd',
-      borderRadius: 8,
-      paddingHorizontal: 15,
-      backgroundColor: 'white',
-      fontSize: 16,
-    },
-    textArea: {
-      height: 120,
-      textAlignVertical: 'top',
-      paddingTop: 12,
-      paddingBottom: 12,
-    },
-    priceContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      borderWidth: 1,
-      borderColor: '#ddd',
-      borderRadius: 8,
-      backgroundColor: 'white',
-    },
-    dollarSign: {
-      paddingLeft: 15,
-      fontSize: 18,
-      color: '#333',
-    },
-    priceInput: {
-      flex: 1,
-      height: 50,
-      paddingHorizontal: 5,
-      fontSize: 16,
-    },
-    dropdown: {
-      height: 50,
-      borderWidth: 1,
-      borderColor: '#ddd',
-      borderRadius: 8,
-      paddingHorizontal: 15,
-      backgroundColor: 'white',
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
-    dropdownSelectedText: {
-      fontSize: 16,
-      color: '#333',
-    },
-    dropdownPlaceholder: {
-      fontSize: 16,
-      color: '#aaa',
-    },
-    dropdownArrow: {
-      fontSize: 12,
-      color: '#777',
-    },
-    locationContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      borderWidth: 1,
-      borderColor: '#ddd',
-      borderRadius: 8,
-      backgroundColor: 'white',
-    },
-    locationIcon: {
-      paddingLeft: 15,
-      fontSize: 16,
-    },
-    locationInput: {
-      flex: 1,
-      height: 50,
-      paddingHorizontal: 5,
-      fontSize: 16,
-    },
-    infoBox: {
-      backgroundColor: '#e3f2fd',
-      borderRadius: 8,
-      padding: 12,
-      flexDirection: 'row',
-      marginBottom: 20,
-      borderWidth: 1,
-      borderColor: '#bbdefb',
-    },
-    infoIcon: {
-      fontSize: 16,
-      marginRight: 8,
-    },
-    infoText: {
-      flex: 1,
-      fontSize: 12,
-      color: '#0d47a1',
-      lineHeight: 18,
-    },
-    button: {
-      backgroundColor: '#1a73e8',
-      height: 54,
-      borderRadius: 8,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginBottom: 12,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    buttonDisabled: {
-      backgroundColor: '#9e9e9e',
-    },
-    buttonText: {
-      color: 'white',
-      fontSize: 16,
-      fontWeight: 'bold',
-    },
-    requiredNote: {
-      textAlign: 'center',
-      fontSize: 12,
-      color: '#777',
-      marginBottom: 20,
-    },
-    bottomSpacer: {
-      height: 40,
-    },
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    modalContent: {
-      width: '80%',
-      backgroundColor: 'white',
-      borderRadius: 12,
-      padding: 16,
-      maxHeight: '70%',
-    },
-    modalTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      marginBottom: 12,
-      textAlign: 'center',
-      color: '#333',
-    },
-    modalScrollView: {
-      maxHeight: 300,
-    },
-    modalItem: {
-      paddingVertical: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: '#eee',
-    },
-    modalItemText: {
-      fontSize: 16,
-      color: '#333',
-    },
-    modalCloseButton: {
-      marginTop: 16,
-      paddingVertical: 12,
-      alignItems: 'center',
-      backgroundColor: '#f5f5f5',
-      borderRadius: 8,
-    },
-    modalCloseButtonText: {
-      fontSize: 16,
-      fontWeight: '500',
-      color: '#777',
-    },
-    errorInput: {
-      borderColor: 'red',
-    },
-    errorText: {
-      color: 'red',
-      fontSize: 12,
-      marginTop: 4,
-      marginBottom: 4,
-    },
-    loadingOverlay: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderRadius: 12,
-    }
-  });
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  containerCenter: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: COLORS.background,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.background,
+  },
+  message: {
+    fontSize: 18,
+    marginBottom: 20,
+    textAlign: 'center',
+    color: COLORS.textPrimary,
+  },
+  loginButton: {
+    backgroundColor: COLORS.brightOrange,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    width: 200,
+  },
+  loginButtonText: {
+    color: COLORS.white,
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: COLORS.textSecondary,
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 100,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+    color: COLORS.brightOrange,
+  },
+  sectionContainer: {
+    marginBottom: 20,
+    backgroundColor: COLORS.cardBackground,
+    padding: 16,
+    borderRadius: 8,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 6,
+    color: COLORS.white,
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginBottom: 10,
+    fontStyle: 'italic',
+  },
+  imagesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  imageWrapper: {
+    position: 'relative',
+    width: 100,
+    height: 100,
+    margin: 4,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  imagePreview: {
+    width: '100%',
+    height: '100%',
+  },
+  removeButton: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    backgroundColor: 'rgba(255, 82, 82, 0.8)',
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  removeButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  addImageButton: {
+    width: 100,
+    height: 100,
+    margin: 4,
+    borderWidth: 1,
+    borderColor: COLORS.mediumGray,
+    borderStyle: 'dashed',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(15, 41, 66, 0.5)',
+  },
+  addImageContent: {
+    alignItems: 'center',
+  },
+  plusIcon: {
+    fontSize: 24,
+    color: COLORS.brightOrange,
+    marginBottom: 4,
+  },
+  addImageText: {
+    fontSize: 12,
+    color: COLORS.brightOrange,
+  },
+  fieldContainer: {
+    marginBottom: 16,
+    backgroundColor: COLORS.cardBackground,
+    padding: 16,
+    borderRadius: 8,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 8,
+    color: COLORS.white,
+  },
+  required: {
+    color: COLORS.error,
+  },
+  input: {
+    height: 50,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    backgroundColor: COLORS.darkBlue,
+    fontSize: 16,
+  },
+  textArea: {
+    height: 120,
+    textAlignVertical: 'top',
+    paddingTop: 12,
+    paddingBottom: 12,
+  },
+  priceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 8,
+    backgroundColor: COLORS.darkBlue,
+  },
+  dollarSign: {
+    paddingLeft: 15,
+    fontSize: 18,
+    color: COLORS.textPrimary,
+  },
+  priceInput: {
+    flex: 1,
+    height: 50,
+    paddingHorizontal: 5,
+    fontSize: 16,
+    color: COLORS.textPrimary,
+  },
+  dropdown: {
+    height: 50,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    backgroundColor: COLORS.darkBlue,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dropdownSelectedText: {
+    fontSize: 16,
+    color: COLORS.textPrimary,
+  },
+  dropdownPlaceholder: {
+    fontSize: 16,
+    color: COLORS.mediumGray,
+  },
+  dropdownArrow: {
+    fontSize: 12,
+    color: COLORS.mediumGray,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 8,
+    backgroundColor: COLORS.darkBlue,
+  },
+  locationIcon: {
+    paddingLeft: 15,
+    fontSize: 16,
+  },
+  locationInput: {
+    flex: 1,
+    height: 50,
+    paddingHorizontal: 5,
+    fontSize: 16,
+    color: COLORS.textPrimary,
+  },
+  infoBox: {
+    backgroundColor: 'rgba(21, 101, 192, 0.2)',
+    borderRadius: 8,
+    padding: 12,
+    flexDirection: 'row',
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(21, 101, 192, 0.3)',
+  },
+  infoIcon: {
+    fontSize: 16,
+    marginRight: 8,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
+  },
+  button: {
+    backgroundColor: COLORS.brightOrange,
+    height: 54,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  buttonDisabled: {
+    backgroundColor: COLORS.darkGray,
+  },
+  buttonText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  requiredNote: {
+    textAlign: 'center',
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginBottom: 20,
+  },
+  bottomSpacer: {
+    height: 40,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: 12,
+    padding: 16,
+    maxHeight: '70%',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+    color: COLORS.white,
+  },
+  modalScrollView: {
+    maxHeight: 300,
+  },
+  modalItem: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  modalItemText: {
+    fontSize: 16,
+    color: COLORS.textPrimary,
+  },
+  modalCloseButton: {
+    marginTop: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+    backgroundColor: COLORS.darkBlue,
+    borderRadius: 8,
+  },
+  modalCloseButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: COLORS.textSecondary,
+  },
+  errorInput: {
+    borderColor: COLORS.error,
+  },
+  errorText: {
+    color: COLORS.error,
+    fontSize: 12,
+    marginTop: 4,
+    marginBottom: 4,
+  },
+});

@@ -6,11 +6,13 @@ import {
   FlatList, 
   TouchableOpacity, 
   ActivityIndicator,
-  RefreshControl
+  RefreshControl,
+  StatusBar
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Query } from 'react-native-appwrite';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { 
   account, 
   databases, 
@@ -19,12 +21,31 @@ import {
   USERS_COLLECTION_ID
 } from '../../appwrite/config';
 
+// Define consistent theme colors - matching home page
+const COLORS = {
+  darkBlue: '#0A1929',
+  mediumBlue: '#0F2942',
+  lightBlue: '#1565C0',
+  orange: '#FF6F00', 
+  brightOrange: '#FF9800',
+  white: '#FFFFFF',
+  lightGray: '#F5F7FA',
+  mediumGray: '#B0BEC5',
+  darkGray: '#546E7A',
+  error: '#FF5252',
+  background: '#0A1929',
+  cardBackground: '#0F2942',
+  textPrimary: '#FFFFFF',
+  textSecondary: '#B0BEC5',
+};
+
 export default function ChatTab() {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [chats, setChats] = useState([]);
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   
   useEffect(() => {
     checkSession();
@@ -162,49 +183,82 @@ export default function ChatTab() {
 
   if (isLoading && !refreshing) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2196F3" />
+      <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
+        <StatusBar barStyle="light-content" backgroundColor={COLORS.darkBlue} />
+        <ActivityIndicator size="large" color={COLORS.brightOrange} />
+        <Text style={styles.loadingText}>Loading messages...</Text>
       </View>
     );
   }
 
   if (!currentUser) {
     return (
-      <View style={styles.containerCenter}>
+      <View style={[styles.containerCenter, { paddingTop: insets.top }]}>
+        <StatusBar barStyle="light-content" backgroundColor={COLORS.darkBlue} />
         <Text style={styles.title}>Messages</Text>
         <Text style={styles.message}>Please log in to view your messages</Text>
-        <TouchableOpacity style={styles.button} onPress={() => router.push('/login')}>
-          <Text style={styles.buttonText}>Log In</Text>
+        <TouchableOpacity 
+          style={styles.loginButton} 
+          onPress={() => router.push('/login')}
+        >
+          <Text style={styles.loginButtonText}>Log In</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.darkBlue} />
+      
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Messages</Text>
+        <View style={styles.headerContent}>
+          <View style={styles.headerTitleContainer}>
+            <Ionicons name="chatbubbles" size={24} color={COLORS.brightOrange} style={styles.headerIcon} />
+            <Text style={styles.headerTitle}>Messages</Text>
+          </View>
+          
+          <View style={styles.userContainer}>
+            <Text style={styles.welcomeText}>
+              {currentUser?.name?.split(' ')[0] || 'User'}
+            </Text>
+            <View style={styles.avatarContainer}>
+              <Text style={styles.avatarContainerText}>
+                {currentUser?.name?.charAt(0).toUpperCase() || 'U'}
+              </Text>
+            </View>
+          </View>
+        </View>
       </View>
       
-      {chats.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="chatbubbles-outline" size={60} color="#ccc" />
-          <Text style={styles.emptyText}>No messages yet</Text>
-          <Text style={styles.emptySubtext}>
-            Your conversations with other users will appear here
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={chats}
-          renderItem={renderChatItem}
-          keyExtractor={item => item.$id}
-          contentContainerStyle={styles.chatsList}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-        />
-      )}
+      {/* Main Content */}
+      <View style={styles.mainContent}>
+        {chats.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="chatbubbles-outline" size={60} color={COLORS.mediumGray} />
+            <Text style={styles.emptyText}>No messages yet</Text>
+            <Text style={styles.emptySubtext}>
+              Your conversations with other users will appear here
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={chats}
+            renderItem={renderChatItem}
+            keyExtractor={item => item.$id}
+            contentContainerStyle={styles.chatsList}
+            refreshControl={
+              <RefreshControl 
+                refreshing={refreshing} 
+                onRefresh={onRefresh}
+                tintColor={COLORS.brightOrange}
+                colors={[COLORS.brightOrange]} 
+              />
+            }
+          />
+        )}
+      </View>
     </View>
   );
 }
@@ -212,51 +266,99 @@ export default function ChatTab() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.background,
   },
   header: {
-    backgroundColor: '#2196F3',
-    padding: 16,
-    paddingTop: 40,
+    backgroundColor: COLORS.mediumBlue,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIcon: {
+    marginRight: 8,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: 'white',
+    color: COLORS.white,
+  },
+  userContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  welcomeText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginRight: 10,
+  },
+  avatarContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.brightOrange,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarContainerText: {
+    color: COLORS.white,
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  mainContent: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: COLORS.background,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: COLORS.textSecondary,
   },
   containerCenter: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    backgroundColor: COLORS.background,
   },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 20,
+    color: COLORS.white,
   },
   message: {
     fontSize: 16,
-    color: '#666',
+    color: COLORS.textSecondary,
     marginBottom: 20,
     textAlign: 'center',
   },
-  button: {
-    backgroundColor: '#2196F3',
-    padding: 12,
+  loginButton: {
+    backgroundColor: COLORS.brightOrange,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 8,
     alignItems: 'center',
     width: 200,
   },
-  buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
+  loginButtonText: {
+    color: COLORS.white,
+    fontWeight: '600',
+    fontSize: 14,
   },
   emptyContainer: {
     flex: 1,
@@ -269,10 +371,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 12,
     marginBottom: 8,
+    color: COLORS.white,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#666',
+    color: COLORS.textSecondary,
     textAlign: 'center',
     maxWidth: '80%',
   },
@@ -283,20 +386,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: 'rgba(255,255,255,0.05)',
     alignItems: 'center',
+    backgroundColor: COLORS.cardBackground,
   },
   chatAvatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#2196F3',
+    backgroundColor: COLORS.brightOrange,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   avatarText: {
-    color: 'white',
+    color: COLORS.white,
     fontSize: 20,
     fontWeight: 'bold',
   },
@@ -313,13 +417,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     flex: 1,
     marginRight: 8,
+    color: COLORS.white,
   },
   chatTime: {
     fontSize: 12,
-    color: '#888',
+    color: COLORS.mediumGray,
   },
   chatListingTitle: {
     fontSize: 14,
-    color: '#666',
+    color: COLORS.textSecondary,
   },
 });
