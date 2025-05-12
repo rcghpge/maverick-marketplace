@@ -1,4 +1,3 @@
-import 'dotenv/config';
 export default ({ config }) => {
   const isWeb = process.env.WEB === 'true';
   return {
@@ -26,6 +25,8 @@ export default ({ config }) => {
         favicon: "./assets/images/favicon.png",
       },
       plugins: [
+        "expo-font",
+        "expo-web-browser",
         "expo-router",
         [
           "expo-splash-screen",
@@ -40,8 +41,12 @@ export default ({ config }) => {
       experiments: {
         typedRoutes: true,
       },
-      // Explicitly set new architecture to true 
       newArchEnabled: true,
+      doctor: {
+        reactNativeDirectoryCheck: {
+          listUnknownPackages: false,
+        },
+      },
     },
   };
 };
