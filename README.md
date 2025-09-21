@@ -22,7 +22,7 @@ This project uses Appwrite Cloud for its backend. Students can often get free cr
     ```
 
 2.  **Install dependencies:**
-    * Check Node.js and `npm` installation instructions if npm is not installed on your local machine - [https://docs.npmjs.com/downloading-and-installing-node-js-and-npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
+    * Check Node.js and `npm` installation instructions if `npm` is not installed on your local machine [https://docs.npmjs.com/downloading-and-installing-node-js-and-npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
     ```bash
     npm install
     ```
